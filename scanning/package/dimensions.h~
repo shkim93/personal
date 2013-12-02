@@ -1,0 +1,10 @@
+#ifndef DIMENSIONS_H
+#define DIMENSIONS_H
+
+class Dimensions {
+
+
+};
+
+
+#endif

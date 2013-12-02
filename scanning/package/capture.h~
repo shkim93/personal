@@ -1,0 +1,19 @@
+#ifndef CAPTURE_H
+#define CAPTURE_H
+
+class Capture {
+
+private:
+	PointClouds pc;
+	
+
+public:
+	Capture();
+	
+
+};
+
+#endif
+
+
+

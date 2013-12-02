@@ -1,0 +1,72 @@
+#include <pcl/visualization/pcl_visualizer.h>
+#include <boost/thread/thread.hpp>
+#include <iostream>
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+
+Eigen::Matrix4f genRyMatrix(float theta){
+  Eigen::Matrix4f rotMat;
+  float PI = 3.14159265;
+  float theta_rad = (theta * PI) / 180.0;
+  rotMat << cos(theta_rad), 0, sin(theta_rad), 0, 0, 1, 0, 0, -1*sin(theta_rad), 0, cos(theta_rad), 0, 0, 0, 0, 1;
+  
+  return rotMat;
+}
+
+int main(int argc, char** argv) {
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+pcl::PointCloud<pcl::PointXYZ>::Ptr output_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+
+//program accepts 2 .pcd files for concatenation. *change to 3 later
+  if ( argc > 3 ) {
+    std::cout << "usage: " << argv[0] << " <filename.pcd> <filename.pcd>\n" << std::endl;
+  }
+  else {
+    if(pcl::io::loadPCDFile<pcl::PointXYZ> (argv[1], *output_cloud) == -1) {
+      PCL_ERROR ("Could not read file\n");
+      return (-1);
+    }
+    std::cout << "Loaded " << output_cloud->size() << " data points from " << argv[1] << std::endl;
+
+    if(pcl::io::loadPCDFile<pcl::PointXYZ> (argv[2], *input_cloud) == -1) {
+      PCL_ERROR ("Could not read file\n");
+      return (-1);
+    }
+    std::cout << "Loaded " << input_cloud->size() << " data points from " << argv[2] << std::endl;
+  }
+
+  pcl::common::transformPointCloud(*input_cloud, *input_cloud, genRyMatrix(60));
+
+  // Initializing point cloud visualizer
+  boost::shared_ptr<pcl::visualization::PCLVisualizer>
+  viewer_final (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+  viewer_final->setBackgroundColor (0, 0, 0);
+
+  // Coloring and visualizing target cloud (red).
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
+  input_color (input_cloud, 255, 0, 0);
+  viewer_final->addPointCloud<pcl::PointXYZ> (input_cloud, input_color, "input cloud");
+  viewer_final->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE,
+                                                  1, "input cloud");
+
+  // Coloring and visualizing transformed input cloud (green).
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
+  output_color (output_cloud, 0, 255, 0);
+  viewer_final->addPointCloud<pcl::PointXYZ> (output_cloud, output_color, "output cloud");
+  viewer_final->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE,
+                                                  1, "output cloud");
+
+  // Starting visualizer
+  viewer_final->addCoordinateSystem (1.0);
+  viewer_final->initCameraParameters ();
+
+  // Wait until visualizer window is closed.
+  while (!viewer_final->wasStopped ())
+  {
+    viewer_final->spinOnce (100);
+    boost::this_thread::sleep (boost::posix_time::microseconds (100000));
+  }
+
+  return (0);
+}
